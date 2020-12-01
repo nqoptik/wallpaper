@@ -1,4 +1,5 @@
-FROM ubuntu:focal
+# Build stage
+FROM ubuntu:focal AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
@@ -14,7 +15,15 @@ COPY CMakeLists.txt .
 
 RUN mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
-RUN rm -rf src
-RUN rm CMakeLists.txt
+# Production stage
+FROM ubuntu:focal AS production
 
-CMD [ "./build/wallpaper" ]
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libboost-filesystem-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /root/wallpaper
+
+COPY --from=build /root/wallpaper/build build
+
+CMD [ "build/wallpaper" ]
